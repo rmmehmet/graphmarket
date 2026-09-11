@@ -23,3 +23,26 @@ class SaleOut(BaseModel):
     quantity: int
     source: str
     sold_at: datetime
+
+
+class SalesImportResult(BaseModel):
+    imported_count: int
+    errors: list[str]
+
+
+class AnalyticsSeriesItem(BaseModel):
+    key: str
+    label: str
+    revenue: float
+    quantity: int
+
+
+class AnalyticsTotals(BaseModel):
+    revenue: float
+    quantity: int
+
+
+class SalesAnalyticsResponse(BaseModel):
+    group_by: str
+    totals: AnalyticsTotals
+    series: list[AnalyticsSeriesItem]

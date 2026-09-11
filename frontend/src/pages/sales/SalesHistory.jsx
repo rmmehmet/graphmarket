@@ -3,6 +3,7 @@ import { useChannels } from '../../hooks/useChannels'
 import { useProducts } from '../../hooks/useProducts'
 import { useCreateSale, useSales } from '../../hooks/useSales'
 import { formatCurrency, formatDate } from '../../lib/formatters'
+import SalesImport from './SalesImport'
 
 export default function SalesHistory() {
   const { data: sales = [], isLoading } = useSales()
@@ -34,6 +35,8 @@ export default function SalesHistory() {
   return (
     <div>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26 }}>Satışlar</h2>
+
+      <SalesImport />
 
       <form
         onSubmit={handleSubmit}

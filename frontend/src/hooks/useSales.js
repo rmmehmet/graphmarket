@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createSale, listSales } from '../services/salesService'
+import { createSale, getSalesAnalytics, importSales, listSales } from '../services/salesService'
 
 export function useSales(filters = {}) {
   return useQuery({
@@ -13,5 +13,23 @@ export function useCreateSale() {
   return useMutation({
     mutationFn: createSale,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sales'] }),
+  })
+}
+
+export function useSalesAnalytics(groupBy = 'week') {
+  return useQuery({
+    queryKey: ['sales-analytics', groupBy],
+    queryFn: () => getSalesAnalytics(groupBy),
+  })
+}
+
+export function useImportSales() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: importSales,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-analytics'] })
+    },
   })
 }
