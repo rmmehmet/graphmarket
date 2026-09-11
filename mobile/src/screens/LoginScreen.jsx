@@ -1,6 +1,7 @@
 import { login } from '@satgit/api-client'
 import { useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { API_BASE_URL } from '../api'
 import { authStore } from '../authStore'
 
 export default function LoginScreen({ navigation }) {
@@ -15,8 +16,14 @@ export default function LoginScreen({ navigation }) {
     try {
       const { access_token, refresh_token } = await login({ email, password })
       authStore.setTokens(access_token, refresh_token)
-    } catch {
-      setError('E-posta veya şifre hatalı.')
+    } catch (err) {
+      if (!err.response) {
+        setError(`Sunucuya ulaşılamıyor (${API_BASE_URL}). Backend çalışıyor mu, aynı Wi-Fi'de misin?`)
+      } else if (err.response.status === 401) {
+        setError('E-posta veya şifre hatalı.')
+      } else {
+        setError(`Beklenmeyen hata (${err.response.status}).`)
+      }
     } finally {
       setSubmitting(false)
     }

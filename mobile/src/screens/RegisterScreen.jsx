@@ -1,6 +1,7 @@
 import { login, register } from '@satgit/api-client'
 import { useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { API_BASE_URL } from '../api'
 import { authStore } from '../authStore'
 
 export default function RegisterScreen({ navigation }) {
@@ -18,7 +19,11 @@ export default function RegisterScreen({ navigation }) {
       const { access_token, refresh_token } = await login({ email, password })
       authStore.setTokens(access_token, refresh_token)
     } catch (err) {
-      setError(err.response?.data?.detail ?? 'Kayıt oluşturulamadı.')
+      if (!err.response) {
+        setError(`Sunucuya ulaşılamıyor (${API_BASE_URL}). Backend çalışıyor mu, aynı Wi-Fi'de misin?`)
+      } else {
+        setError(err.response.data?.detail ?? 'Kayıt oluşturulamadı.')
+      }
     } finally {
       setSubmitting(false)
     }
