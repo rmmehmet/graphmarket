@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import UsageMeter from '../../components/ui/UsageMeter'
 import { useModelProfiles, useTestModelProfile, useUpdateModelProfile } from '../../hooks/useModelProfiles'
+import { useUsage } from '../../hooks/useUsage'
 
 const NODE_LABELS = {
   planner: 'Planlayıcı',
@@ -17,10 +19,16 @@ const PROVIDER_OPTIONS = [
 
 export default function ModelProviderSettings() {
   const { data: profiles = [], isLoading } = useModelProfiles()
+  const { data: usage } = useUsage()
 
   return (
     <div>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26 }}>Model Sağlayıcı Ayarları</h2>
+
+      <div style={{ marginBottom: 16 }}>
+        <UsageMeter usage={usage} />
+      </div>
+
       {isLoading ? (
         <p>Yükleniyor...</p>
       ) : (

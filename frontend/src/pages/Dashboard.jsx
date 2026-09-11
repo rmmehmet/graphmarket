@@ -1,8 +1,10 @@
 import PriceTrendChart from '../components/charts/PriceTrendChart'
 import StatCard from '../components/ui/StatCard'
+import UsageMeter from '../components/ui/UsageMeter'
 import { useSales, useSalesAnalytics } from '../hooks/useSales'
 import { useProducts } from '../hooks/useProducts'
 import { useChannels } from '../hooks/useChannels'
+import { useUsage } from '../hooks/useUsage'
 import { formatCurrency, formatDate } from '../lib/formatters'
 
 export default function Dashboard() {
@@ -10,6 +12,7 @@ export default function Dashboard() {
   const { data: recentSales = [], isLoading: salesLoading } = useSales()
   const { data: products = [] } = useProducts()
   const { data: channels = [] } = useChannels()
+  const { data: usage } = useUsage()
 
   const productName = (id) => products.find((p) => p.id === id)?.name ?? '—'
   const channelName = (id) => channels.find((c) => c.id === id)?.name ?? '—'
@@ -26,6 +29,10 @@ export default function Dashboard() {
         <StatCard label="Satılan adet" value={analyticsLoading ? '—' : analytics?.totals.quantity ?? 0} />
         <StatCard label="Ürün sayısı" value={products.length} />
         <StatCard label="Kanal sayısı" value={channels.length} />
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <UsageMeter usage={usage} />
       </div>
 
       <div

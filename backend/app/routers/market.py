@@ -14,6 +14,7 @@ from app.schemas.market import (
 from app.services.auth_service import AuthenticatedUser, get_current_user
 from app.services.job_service import create_job, get_job
 from app.services.market_service import list_competitors, list_trend_signals
+from app.services.quota_service import check_and_increment
 from app.workers.celery_tasks import run_trend_research
 
 router = APIRouter(prefix="/api/market", tags=["market"])
@@ -25,6 +26,8 @@ def start_research(
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    check_and_increment(db, current_user.team_id, "trend_research")
+
     job = create_job(
         db,
         current_user.team_id,

@@ -8,6 +8,7 @@ from app.db.postgres import get_db
 from app.schemas.messenger import ConnectResponse, ConversationOut, ImportExportResponse, SyncResponse
 from app.services.auth_service import AuthenticatedUser, get_current_user
 from app.services.job_service import create_job, update_job
+from app.services.quota_service import check_and_increment
 from app.services.messenger_service import (
     build_oauth_url,
     exchange_code_for_token,
@@ -111,6 +112,8 @@ def sync(
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    check_and_increment(db, current_user.team_id, "messenger_sync")
+
     job = create_job(db, current_user.team_id, "messenger_sync", input_payload={})
     # Gerçek zamanlı sync, /connect ile bağlanmış gerçek bir Meta App/sayfa gerektirir —
     # bu ortamda yok, o yüzden job'u belirsiz şekilde "queued" bırakmak yerine dürüstçe hataya düşürüyoruz.

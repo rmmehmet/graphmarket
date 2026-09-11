@@ -12,6 +12,7 @@ from app.schemas.agent import (
 from app.services.agent_service import create_ask_deep_record, list_history, run_ask
 from app.services.auth_service import AuthenticatedUser, get_current_user
 from app.services.job_service import create_job
+from app.services.quota_service import check_and_increment
 from app.workers.celery_tasks import run_sales_insight_deep
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
@@ -38,6 +39,8 @@ def ask_deep_endpoint(
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    check_and_increment(db, current_user.team_id, "agent_ask_deep")
+
     job = create_job(
         db, current_user.team_id, "agent_ask_deep", input_payload={"question": payload.question}
     )

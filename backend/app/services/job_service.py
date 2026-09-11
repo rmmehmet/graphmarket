@@ -2,6 +2,7 @@ import json
 from contextlib import contextmanager
 
 import redis
+import structlog
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from app.db.postgres import SessionLocal
 from app.models.job import Job
 
 _redis_client = redis.Redis(host=settings.redis_host, port=settings.redis_port, db=settings.redis_db)
+logger = structlog.get_logger()
 
 
 def job_channel(job_id: str) -> str:
@@ -65,6 +67,15 @@ def update_job(
         job.error_message = error_message
     db.commit()
     db.refresh(job)
+
+    logger.info(
+        "job_updated",
+        job_id=str(job.id),
+        job_type=job.type,
+        status=job.status,
+        progress=job.progress,
+        step=step,
+    )
 
     _redis_client.publish(
         job_channel(str(job.id)),

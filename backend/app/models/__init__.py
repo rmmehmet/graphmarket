@@ -3,9 +3,11 @@ from app.models.channel import Channel
 from app.models.job import Job
 from app.models.messenger_account import MessengerAccount
 from app.models.model_profile import ModelProfile
+from app.models.plan_limit import PlanLimit
 from app.models.product import Product
 from app.models.report import Report
 from app.models.sale import SalesRecord
+from app.models.usage_counter import UsageCounter
 from app.models.user import Team, TeamMember, User
 
 __all__ = [
@@ -20,4 +22,6 @@ __all__ = [
     "AgentQuery",
     "MessengerAccount",
     "Report",
+    "PlanLimit",
+    "UsageCounter",
 ]
