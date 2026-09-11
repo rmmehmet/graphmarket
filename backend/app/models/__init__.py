@@ -4,6 +4,7 @@ from app.models.job import Job
 from app.models.messenger_account import MessengerAccount
 from app.models.model_profile import ModelProfile
 from app.models.product import Product
+from app.models.report import Report
 from app.models.sale import SalesRecord
 from app.models.user import Team, TeamMember, User
 
@@ -18,4 +19,5 @@ __all__ = [
     "ModelProfile",
     "AgentQuery",
     "MessengerAccount",
+    "Report",
 ]

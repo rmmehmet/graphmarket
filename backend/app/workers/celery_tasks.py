@@ -1,13 +1,16 @@
 import json
 import time
+from datetime import date as date_cls
 from decimal import Decimal
 
 from app.agents.graphs.messenger_extraction import get_graph as get_messenger_graph
 from app.agents.graphs.sales_insight import get_graph as get_sales_insight_graph
 from app.agents.graphs.trend_research import get_graph as get_trend_research_graph
+from app.agents.nodes import synthesis as synthesis_node
 from app.core.celery_app import celery_app
 from app.services.agent_service import complete_ask_deep_record
 from app.services.job_service import db_session, update_job
+from app.services.report_service import gather_sales_summary, save_report_content
 
 
 @celery_app.task(name="jobs.mock_job")
@@ -238,6 +241,60 @@ def run_messenger_import_batch(
             progress=100,
             step="done",
             result_ref=json.dumps({"processed": processed, "errors": errors}, ensure_ascii=False),
+        )
+
+    return job_id
+
+
+@celery_app.task(name="jobs.report_generate")
+def run_report_generate(
+    job_id: str,
+    team_id: str,
+    report_id: str,
+    report_type: str,
+    period_start: str,
+    period_end: str,
+    channel_ids: list[str],
+) -> str:
+    with db_session() as db:
+        update_job(db, job_id, status_="running", progress=20, step="gathering")
+
+    with db_session() as db:
+        summary = gather_sales_summary(
+            db,
+            team_id,
+            date_cls.fromisoformat(period_start),
+            date_cls.fromisoformat(period_end),
+            channel_ids,
+        )
+
+    prompt = (
+        f"Aşağıdaki satış özetine dayanarak {period_start} - {period_end} dönemi için kısa bir "
+        "Türkçe iş raporu yaz (toplam gelir, en iyi kanal, kısa yorum, 4-5 madde):\n\n"
+        f"Toplam gelir: {summary['total_revenue']:.2f}\n"
+        f"Toplam adet: {summary['total_quantity']}\n"
+        f"Satış sayısı: {summary['sale_count']}\n"
+        f"Kanal dağılımı: {summary['breakdown']}"
+    )
+
+    with db_session() as db:
+        update_job(db, job_id, progress=60, step="synthesis")
+
+    # Sentez düğümü doğrudan reuse ediliyor (Trend Research/Sales Insight ile aynı fonksiyon)
+    synthesis_result = synthesis_node.run({"team_id": team_id, "synthesis_prompt": prompt})
+    narrative = synthesis_result.get("synthesis_output", "")
+
+    content = {"type": report_type, "summary": summary, "narrative": narrative}
+
+    with db_session() as db:
+        save_report_content(db, report_id, content)
+        update_job(
+            db,
+            job_id,
+            status_="done",
+            progress=100,
+            step="done",
+            result_ref=json.dumps({"report_id": report_id}, ensure_ascii=False),
         )
 
     return job_id
