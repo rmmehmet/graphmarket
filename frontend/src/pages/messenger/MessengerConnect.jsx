@@ -1,19 +1,31 @@
-import { useState } from 'react'
-import FileUploadZone from '../../components/ui/FileUploadZone'
-import { useChannels } from '../../hooks/useChannels'
-import { useImportExport, useTriggerSync } from '../../hooks/useMessenger'
 import { getConnectUrl } from '@satgit/api-client'
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import FileUploadZone from '../../components/ui/FileUploadZone'
+import JobStatusBadge from '../../components/ui/JobStatusBadge'
+import { useChannels } from '../../hooks/useChannels'
+import useJobStatus from '../../hooks/useJobStatus'
+import { useImportExport, useTriggerSync } from '../../hooks/useMessenger'
 import ConversationList from './ConversationList'
 
 export default function MessengerConnect() {
+  const queryClient = useQueryClient()
   const { data: channels = [] } = useChannels()
   const [channelId, setChannelId] = useState('')
-  const [importResult, setImportResult] = useState(null)
+  const [importJobId, setImportJobId] = useState(null)
   const [syncResult, setSyncResult] = useState(null)
   const [connecting, setConnecting] = useState(false)
 
   const importExport = useImportExport()
   const triggerSync = useTriggerSync()
+  const { job: importJob, status: importStatus, progress: importProgress } = useJobStatus(importJobId)
+
+  // İçe aktarma bitince "Konuşmalar" listesini yenile — az önce ne kaydedildiğinin önizlemesi budur.
+  useEffect(() => {
+    if (importStatus === 'done') {
+      queryClient.invalidateQueries({ queryKey: ['messenger-conversations'] })
+    }
+  }, [importStatus, queryClient])
 
   async function handleConnect() {
     setConnecting(true)
@@ -26,16 +38,25 @@ export default function MessengerConnect() {
   }
 
   function handleFile(file) {
-    setImportResult(null)
+    setImportJobId(null)
     importExport.mutate(
       { file, channelId: channelId || null },
-      { onSuccess: (data) => setImportResult(data) },
+      { onSuccess: (data) => setImportJobId(data.job_id) },
     )
   }
 
   function handleSync() {
     setSyncResult(null)
     triggerSync.mutate(undefined, { onSuccess: (data) => setSyncResult(data) })
+  }
+
+  let importResultSummary = null
+  if (importJob?.result_ref) {
+    try {
+      importResultSummary = JSON.parse(importJob.result_ref)
+    } catch {
+      importResultSummary = null
+    }
   }
 
   return (
@@ -82,7 +103,8 @@ export default function MessengerConnect() {
           Geçmiş veri (tek seferlik export)
         </h3>
         <p style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>
-          Facebook "Bilgilerinizi İndirin" ile aldığın mesaj export JSON dosyasını yükle.
+          Facebook "Bilgilerinizi İndirin" ile aldığın <code>message_1.json</code> dosyasını yükle
+          (yalnızca mesajlar — CSV değil, JSON doğru format).
         </p>
         <select
           value={channelId}
@@ -97,15 +119,41 @@ export default function MessengerConnect() {
           ))}
         </select>
         <FileUploadZone accept=".json" onFileSelected={handleFile} disabled={importExport.isPending} />
-        {importExport.isPending && <p>Yükleniyor...</p>}
-        {importResult && (
-          <p style={{ fontSize: 12.5, color: 'var(--good)', marginTop: 8 }}>
-            {importResult.message_count} mesaj işlenmek üzere kuyruğa alındı (job_id: {importResult.job_id})
-          </p>
+
+        {importJobId && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <JobStatusBadge status={importStatus} />
+              {importStatus && importStatus !== 'done' && importStatus !== 'error' && (
+                <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>%{importProgress}</span>
+              )}
+            </div>
+            {importStatus === 'error' && (
+              <p style={{ color: 'var(--critical)', fontSize: 13 }}>{importJob?.error_message}</p>
+            )}
+            {importResultSummary && (
+              <div style={{ fontSize: 12.5, marginTop: 8 }}>
+                <p style={{ color: 'var(--good)' }}>
+                  {importResultSummary.processed} mesaj işlendi.
+                </p>
+                {importResultSummary.errors?.length > 0 && (
+                  <ul style={{ color: 'var(--critical)' }}>
+                    {importResultSummary.errors.map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>Konuşmalar</h3>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>
+        Konuşmalar <span style={{ fontSize: 12.5, color: 'var(--ink-2)', fontWeight: 400 }}>
+          (yüklenenin ne olarak kaydedildiğinin önizlemesi)
+        </span>
+      </h3>
       <ConversationList />
     </div>
   )
