@@ -37,4 +37,4 @@ npm run ios      # iOS simülatör (macOS gerekir)
 
 Repo kökünde npm workspaces var (`frontend`, `packages/api-client`, `mobile`) — `npm install` kökte çalıştırılır.
 
-Docker Compose ve prod kurulumu Faz 12'ye bırakıldı.
+**Prod / Docker Compose:** Detaylar için `PROD_READINESS.md` — bağımsız bir prod-benzeri stack (`docker-compose.yml`), Dockerfile'lar, yönetilen servis (Neo4j Aura, Zilliz Cloud) değerlendirmesi, frontend Sentry/error boundary kurulumu.
