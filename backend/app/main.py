@@ -34,6 +34,7 @@ app.include_router(market.router)
 app.include_router(agent.router)
 app.include_router(reports.router)
 app.include_router(jobs.router)
+app.include_router(jobs.ws_router)
 app.include_router(settings_router.router)
 app.include_router(usage.router)
 
