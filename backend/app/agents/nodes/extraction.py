@@ -27,5 +27,10 @@ def run(state: dict) -> dict:
             "source_count": len(search_results),
             "direction": "durağan",
             "strength": 0.5,
-        }
+        },
+        "evidence_count": len(search_results),
+        "synthesis_prompt": (
+            f"'{state['category']}' kategorisi için şu çıkarım özetine dayanarak kısa "
+            f"bir pazar trend raporu yaz (3-4 madde, Türkçe):\n\n{summary}"
+        ),
     }

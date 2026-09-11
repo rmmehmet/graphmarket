@@ -7,6 +7,7 @@ from app.db.postgres import get_db
 from app.models.channel import Channel
 from app.schemas.channel import ChannelCreate, ChannelOut, ChannelUpdate
 from app.services.auth_service import AuthenticatedUser, get_current_user
+from app.services.graph_sync import sync_channel_delete, sync_channel_upsert
 
 router = APIRouter(prefix="/api/channels", tags=["channels"])
 
@@ -36,6 +37,7 @@ def create_channel(
     db.add(channel)
     db.commit()
     db.refresh(channel)
+    sync_channel_upsert(str(channel.id), channel.name, channel.platform, current_user.team_id)
     return channel
 
 
@@ -52,6 +54,7 @@ def update_channel(
             setattr(channel, key, value)
     db.commit()
     db.refresh(channel)
+    sync_channel_upsert(str(channel.id), channel.name, channel.platform, current_user.team_id)
     return channel
 
 
@@ -71,3 +74,4 @@ def delete_channel(
             status_code=status.HTTP_409_CONFLICT,
             detail="channel has sales records and cannot be deleted",
         )
+    sync_channel_delete(channel_id)

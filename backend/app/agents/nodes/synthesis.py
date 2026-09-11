@@ -4,26 +4,20 @@ from app.services.settings_service import resolve_profile
 
 
 def run(state: dict) -> dict:
+    """Trend Research ve Sales Insight aynı Sentez düğümünü paylaşır — önceki düğüm
+    (extraction / retrieval) `synthesis_prompt` alanını hazırlar, bu düğüm sadece
+    'synthesis' node profiline göre modeli çağırır.
+    """
     team_id = state["team_id"]
-    extracted = state.get("extracted", {})
+    prompt = state.get("synthesis_prompt", "")
 
     with db_session() as db:
         provider_name, model_name, api_key = resolve_profile(db, team_id, "synthesis")
     provider = get_provider(provider_name, model_name, api_key)
 
-    prompt = (
-        f"'{state['category']}' kategorisi için şu çıkarım özetine dayanarak kısa "
-        f"bir pazar trend raporu yaz (3-4 madde, Türkçe):\n\n{extracted.get('summary', '')}"
-    )
     try:
-        report_text = provider.complete(prompt)
+        output = provider.complete(prompt)
     except Exception as exc:
-        report_text = f"[sentez sağlayıcısı başarısız oldu: {exc}]\n{extracted.get('summary', '')}"
+        output = f"[sentez sağlayıcısı başarısız oldu: {exc}]"
 
-    return {
-        "report": {
-            "category": state["category"],
-            "text": report_text,
-            "sources": len(state.get("search_results", [])),
-        }
-    }
+    return {"synthesis_output": output}

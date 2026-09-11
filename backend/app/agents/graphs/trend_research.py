@@ -16,6 +16,9 @@ class TrendResearchState(TypedDict, total=False):
     extracted: dict
     graph_written: bool
     vector_written: bool
+    synthesis_prompt: str
+    synthesis_output: str
+    evidence_count: int
     report: dict
     verified: bool
     retry_count: int

@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.product import Product
+from app.services.graph_sync import sync_product_delete, sync_product_upsert
 
 
 def list_products(db: Session, team_id: str, category: str | None, search: str | None):
@@ -24,6 +25,7 @@ def create_product(
     db.add(product)
     db.commit()
     db.refresh(product)
+    sync_product_upsert(str(product.id), product.name, product.category, team_id)
     return product
 
 
@@ -41,6 +43,7 @@ def update_product(db: Session, team_id: str, product_id: str, data: dict) -> Pr
             setattr(product, key, value)
     db.commit()
     db.refresh(product)
+    sync_product_upsert(str(product.id), product.name, product.category, team_id)
     return product
 
 
@@ -55,3 +58,4 @@ def delete_product(db: Session, team_id: str, product_id: str) -> None:
             status_code=status.HTTP_409_CONFLICT,
             detail="product has sales records and cannot be deleted",
         )
+    sync_product_delete(product_id)

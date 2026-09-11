@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.models.channel import Channel
 from app.models.product import Product
 from app.models.sale import SalesRecord
+from app.services.graph_sync import sync_sale_written
 
 
 def list_sales(
@@ -53,6 +54,7 @@ def create_sale(
     db.add(sale)
     db.commit()
     db.refresh(sale)
+    sync_sale_written(str(product_id), str(channel_id), price, sale.sold_at, sale.source)
     return sale
 
 
@@ -100,6 +102,7 @@ def import_sales_from_csv(db: Session, team_id: str, file_bytes: bytes) -> tuple
         )
         db.add(sale)
         imported += 1
+        sync_sale_written(str(product.id), str(channel.id), price, sale.sold_at, sale.source)
 
     db.commit()
     return imported, errors
