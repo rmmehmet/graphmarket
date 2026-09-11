@@ -1,0 +1,25 @@
+# dependencies
+**/node_modules/
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# env secrets
+**/.env
+!**/.env.example
+
+# build output
+**/dist/
+**/build/
+
+# internal design/reference docs — not part of shipped code
+docs/
+
+# editor / tool metadata
+.vscode/
+.idea/
+.qodo/
+
+# OS
+.DS_Store
+Thumbs.db
