@@ -1,6 +1,8 @@
 import json
 import time
+from decimal import Decimal
 
+from app.agents.graphs.messenger_extraction import get_graph as get_messenger_graph
 from app.agents.graphs.sales_insight import get_graph as get_sales_insight_graph
 from app.agents.graphs.trend_research import get_graph as get_trend_research_graph
 from app.core.celery_app import celery_app
@@ -132,5 +134,110 @@ def run_sales_insight_deep(job_id: str, team_id: str, question: str) -> str:
             step="done",
         )
         complete_ask_deep_record(db, job_id, answer, citations)
+
+    return job_id
+
+
+def _maybe_log_inferred_sale(team_id: str, final_state: dict, channel_id: str | None) -> None:
+    """extraction bir ürün eşleşmesi + fiyat bulduysa, sales_records'a source='messenger_inferred'
+    ile otomatik bir satış kaydı düşer (Mimari doc bölüm 5 — sales_records.source enum'u).
+    """
+    extracted = final_state.get("extracted", {})
+    product_id = final_state.get("matched_product_id")
+    price = extracted.get("price")
+    if not product_id or price is None or channel_id is None:
+        return
+
+    from app.services.sales_service import create_sale
+
+    with db_session() as db:
+        try:
+            sale = create_sale(db, team_id, product_id, channel_id, Decimal(str(price)), 1, None)
+            sale.source = "messenger_inferred"
+            db.commit()
+        except Exception:
+            db.rollback()
+
+
+@celery_app.task(name="jobs.messenger_webhook_message")
+def run_messenger_webhook_message(
+    job_id: str, team_id: str, message_text: str, customer_ref: str, channel_id: str | None, source: str
+) -> str:
+    with db_session() as db:
+        update_job(db, job_id, status_="running", progress=10, step="extraction")
+
+    graph = get_messenger_graph()
+    try:
+        final_state = graph.invoke(
+            {
+                "job_id": job_id,
+                "team_id": team_id,
+                "message_text": message_text,
+                "customer_ref": customer_ref,
+                "channel_id": channel_id,
+                "source": source,
+            }
+        )
+    except Exception as exc:
+        with db_session() as db:
+            update_job(db, job_id, status_="error", error_message=str(exc), step="error")
+        raise
+
+    _maybe_log_inferred_sale(team_id, final_state, channel_id)
+
+    with db_session() as db:
+        update_job(
+            db,
+            job_id,
+            status_="done",
+            progress=100,
+            step="done",
+            result_ref=json.dumps({"extracted": final_state.get("extracted", {})}, ensure_ascii=False),
+        )
+
+    return job_id
+
+
+@celery_app.task(name="jobs.messenger_import_batch")
+def run_messenger_import_batch(
+    job_id: str, team_id: str, messages: list[dict], channel_id: str | None = None
+) -> str:
+    total = len(messages) or 1
+    with db_session() as db:
+        update_job(db, job_id, status_="running", progress=0, step="started")
+
+    graph = get_messenger_graph()
+    processed = 0
+    errors: list[str] = []
+
+    for msg in messages:
+        try:
+            final_state = graph.invoke(
+                {
+                    "job_id": job_id,
+                    "team_id": team_id,
+                    "message_text": msg["text"],
+                    "customer_ref": msg["customer_ref"],
+                    "channel_id": channel_id,
+                    "source": "messenger_export",
+                }
+            )
+            _maybe_log_inferred_sale(team_id, final_state, channel_id)
+        except Exception as exc:
+            errors.append(str(exc))
+
+        processed += 1
+        with db_session() as db:
+            update_job(db, job_id, progress=int(processed / total * 100), step=f"message_{processed}")
+
+    with db_session() as db:
+        update_job(
+            db,
+            job_id,
+            status_="done",
+            progress=100,
+            step="done",
+            result_ref=json.dumps({"processed": processed, "errors": errors}, ensure_ascii=False),
+        )
 
     return job_id

@@ -1,6 +1,7 @@
 from app.models.agent_query import AgentQuery
 from app.models.channel import Channel
 from app.models.job import Job
+from app.models.messenger_account import MessengerAccount
 from app.models.model_profile import ModelProfile
 from app.models.product import Product
 from app.models.sale import SalesRecord
@@ -16,4 +17,5 @@ __all__ = [
     "Job",
     "ModelProfile",
     "AgentQuery",
+    "MessengerAccount",
 ]

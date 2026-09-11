@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     huggingface_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
 
+    meta_app_id: str = ""
+    meta_app_secret: str = ""
+    meta_redirect_uri: str = ""
+    meta_webhook_verify_token: str = ""
+
     @property
     def postgres_dsn(self) -> str:
         return (
