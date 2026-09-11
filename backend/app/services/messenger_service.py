@@ -69,6 +69,17 @@ def verify_signature(payload: bytes, signature_header: str) -> bool:
     return hmac.compare_digest(expected, provided)
 
 
+def _fix_facebook_mojibake(text: str) -> str:
+    """Facebook'un export JSON'u UTF-8 baytlarını Latin-1 karakterleri gibi kaçırıyor
+    (bilinen bir FB hatası) — bu yüzden 'İ', 'ş', 'ğ' gibi karakterler bozuk görünür.
+    Baytları Latin-1 olarak geri kodlayıp UTF-8 olarak yeniden çözmek orijinal metni verir.
+    """
+    try:
+        return text.encode("latin1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return text
+
+
 def parse_export_messages(content: bytes) -> list[dict]:
     """Facebook 'Bilgilerinizi İndirin' JSON export formatını okur — {"messages": [{"sender_name",
     "content", ...}]}. Kişisel veri tutulmaz: gönderen adı hash'lenip customer_ref olarak kullanılır.
@@ -84,6 +95,8 @@ def parse_export_messages(content: bytes) -> list[dict]:
         sender = m.get("sender_name")
         if not text or not sender:
             continue
+        text = _fix_facebook_mojibake(text)
+        sender = _fix_facebook_mojibake(sender)
         customer_ref = hashlib.sha256(sender.encode("utf-8")).hexdigest()[:16]
         messages.append({"text": text, "customer_ref": customer_ref})
     return messages
