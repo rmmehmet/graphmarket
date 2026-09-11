@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
-import { getJob, jobWebSocketUrl } from '../services/jobsService'
+import { getJob, jobWebSocketUrl } from '@satgit/api-client'
 
 const TERMINAL_STATUSES = new Set(['done', 'error'])
 

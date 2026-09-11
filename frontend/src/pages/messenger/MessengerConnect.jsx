@@ -2,7 +2,7 @@ import { useState } from 'react'
 import FileUploadZone from '../../components/ui/FileUploadZone'
 import { useChannels } from '../../hooks/useChannels'
 import { useImportExport, useTriggerSync } from '../../hooks/useMessenger'
-import { getConnectUrl } from '../../services/messengerService'
+import { getConnectUrl } from '@satgit/api-client'
 import ConversationList from './ConversationList'
 
 export default function MessengerConnect() {

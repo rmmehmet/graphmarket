@@ -1,4 +1,4 @@
-import client from './client'
+import { client } from './client'
 
 export async function listProducts({ category, search } = {}) {
   const { data } = await client.get('/api/products/', { params: { category, search } })

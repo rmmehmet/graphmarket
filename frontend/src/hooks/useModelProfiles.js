@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getModelProfiles, testModelProfile, updateModelProfile } from '../services/settingsService'
+import { getModelProfiles, testModelProfile, updateModelProfile } from '@satgit/api-client'
 
 export function useModelProfiles() {
   return useQuery({ queryKey: ['model-profiles'], queryFn: getModelProfiles })

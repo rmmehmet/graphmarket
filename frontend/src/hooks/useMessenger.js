@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { importExport, listConversations, triggerSync } from '../services/messengerService'
+import { importExport, listConversations, triggerSync } from '@satgit/api-client'
 
 export function useConversations(filters = {}) {
   return useQuery({

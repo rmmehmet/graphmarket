@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { generateReport, getReport, listReports } from '../services/reportsService'
+import { generateReport, getReport, listReports } from '@satgit/api-client'
 
 export function useReports() {
   return useQuery({ queryKey: ['reports'], queryFn: listReports })

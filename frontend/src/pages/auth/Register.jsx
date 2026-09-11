@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
-import { login, register } from '../../services/authService'
+import { login, register } from '@satgit/api-client'
 
 export default function Register() {
   const [email, setEmail] = useState('')

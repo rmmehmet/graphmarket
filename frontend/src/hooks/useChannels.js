@@ -4,7 +4,7 @@ import {
   deleteChannel,
   listChannels,
   updateChannel,
-} from '../services/channelsService'
+} from '@satgit/api-client'
 
 export function useChannels() {
   return useQuery({ queryKey: ['channels'], queryFn: listChannels })

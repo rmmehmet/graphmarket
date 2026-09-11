@@ -24,4 +24,17 @@ cd frontend
 npm run dev
 ```
 
-Git henüz başlatılmadı (kullanıcı isteği). Docker Compose ve prod kurulumu Faz 12'ye bırakıldı.
+**Paylaşılan API client:** `packages/api-client` — tüm servis fonksiyonları (`authService`, `productsService`, ... ) burada; hem `frontend` hem `mobile` bunu npm workspace olarak kullanır. `configureApiClient({ baseURL, authStore })` ile host uygulama kendi token depolamasını (web: Zustand+localStorage, mobil: AsyncStorage) bağlar.
+
+**Mobil (React Native / Expo):** `mobile/` — aynı `@satgit/api-client`'i kullanan Login/Register/Panel/Ürünler/Ajan ekranları.
+
+```
+cd mobile
+npm run web      # tarayıcıda dene (react-native-web)
+npm run android  # Android emülatör/cihaz (API_BASE_URL = 10.0.2.2, mobile/src/api.js'de)
+npm run ios      # iOS simülatör (macOS gerekir)
+```
+
+Repo kökünde npm workspaces var (`frontend`, `packages/api-client`, `mobile`) — `npm install` kökte çalıştırılır.
+
+Docker Compose ve prod kurulumu Faz 12'ye bırakıldı.

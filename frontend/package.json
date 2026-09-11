@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@satgit/api-client": "*",
     "@tanstack/react-query": "^5.102.8",
     "axios": "^1.20.0",
     "react": "^19.2.8",

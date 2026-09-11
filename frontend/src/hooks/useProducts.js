@@ -4,7 +4,7 @@ import {
   deleteProduct,
   listProducts,
   updateProduct,
-} from '../services/productsService'
+} from '@satgit/api-client'
 
 export function useProducts(filters = {}) {
   return useQuery({

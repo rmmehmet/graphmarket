@@ -1,0 +1,9 @@
+{
+  "name": "satgit",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "packages/api-client",
+    "mobile"
+  ]
+}

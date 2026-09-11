@@ -1,4 +1,4 @@
-import client from './client'
+import { client } from './client'
 
 export async function listChannels() {
   const { data } = await client.get('/api/channels/')

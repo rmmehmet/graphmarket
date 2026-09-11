@@ -1,4 +1,4 @@
-import client from './client'
+import { client, getBaseURL } from './client'
 
 export async function getJob(jobId) {
   const { data } = await client.get(`/api/jobs/${jobId}`)
@@ -6,7 +6,6 @@ export async function getJob(jobId) {
 }
 
 export function jobWebSocketUrl(jobId) {
-  const base = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
-  const wsBase = base.replace(/^http/, 'ws')
+  const wsBase = getBaseURL().replace(/^http/, 'ws')
   return `${wsBase}/ws/jobs/${jobId}`
 }

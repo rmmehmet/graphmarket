@@ -1,12 +1,33 @@
 import axios from 'axios'
-import { useUiStore } from '../store/uiStore'
 
-const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
-})
+export const client = axios.create()
+
+let authStore = {
+  getAccessToken: () => null,
+  getRefreshToken: () => null,
+  setTokens: () => {},
+  clearTokens: () => {},
+}
+
+let baseURL = ''
+
+/**
+ * Web (Vite) ve React Native, farklı token depolama (localStorage/persist vs AsyncStorage)
+ * ve farklı env okuma yolları (import.meta.env vs process.env) kullanır — bu yüzden client
+ * kendi başına hiçbirini bilmez, host uygulama başlangıçta bunu çağırıp bağlar.
+ */
+export function configureApiClient({ baseURL: url, authStore: store }) {
+  baseURL = url
+  client.defaults.baseURL = url
+  if (store) authStore = store
+}
+
+export function getBaseURL() {
+  return baseURL
+}
 
 client.interceptors.request.use((config) => {
-  const token = useUiStore.getState().accessToken
+  const token = authStore.getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -21,9 +42,9 @@ client.interceptors.response.use(
     const isAuthEndpoint = error.config?.url?.startsWith('/api/auth/')
     if (error.response?.status === 401 && !error.config._retried && !isAuthEndpoint) {
       error.config._retried = true
-      const { refreshToken, setTokens, clearTokens } = useUiStore.getState()
+      const refreshToken = authStore.getRefreshToken()
       if (!refreshToken) {
-        clearTokens()
+        authStore.clearTokens()
         return Promise.reject(error)
       }
       try {
@@ -33,15 +54,13 @@ client.interceptors.response.use(
             refreshPromise = null
           })
         const { data } = await refreshPromise
-        setTokens(data.access_token, refreshToken)
+        authStore.setTokens(data.access_token, refreshToken)
         return client(error.config)
       } catch (refreshError) {
-        clearTokens()
+        authStore.clearTokens()
         return Promise.reject(refreshError)
       }
     }
     return Promise.reject(error)
   },
 )
-
-export default client

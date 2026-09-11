@@ -1,4 +1,4 @@
-import client from './client'
+import { client } from './client'
 
 export async function register({ email, password, businessName }) {
   const { data } = await client.post('/api/auth/register', {

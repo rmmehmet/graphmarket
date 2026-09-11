@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { askAgent, askAgentDeep, getAgentHistory } from '../services/agentService'
+import { askAgent, askAgentDeep, getAgentHistory } from '@satgit/api-client'
 
 export function useAgentHistory(limit = 20) {
   return useQuery({ queryKey: ['agent-history', limit], queryFn: () => getAgentHistory(limit) })

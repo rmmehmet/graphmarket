@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createSale, getSalesAnalytics, importSales, listSales } from '../services/salesService'
+import { createSale, getSalesAnalytics, importSales, listSales } from '@satgit/api-client'
 
 export function useSales(filters = {}) {
   return useQuery({

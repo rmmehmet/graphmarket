@@ -2,7 +2,7 @@ import { useState } from 'react'
 import JobStatusBadge from '../../components/ui/JobStatusBadge'
 import useJobStatus from '../../hooks/useJobStatus'
 import { useProducts } from '../../hooks/useProducts'
-import { startResearch } from '../../services/marketService'
+import { startResearch } from '@satgit/api-client'
 import MarketResult from './MarketResult'
 
 export default function MarketResearch() {
