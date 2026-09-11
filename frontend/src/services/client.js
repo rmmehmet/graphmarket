@@ -18,13 +18,27 @@ let refreshPromise = null
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retried) {
+    const isAuthEndpoint = error.config?.url?.startsWith('/api/auth/')
+    if (error.response?.status === 401 && !error.config._retried && !isAuthEndpoint) {
       error.config._retried = true
-      refreshPromise ??= client.post('/api/auth/refresh').finally(() => {
-        refreshPromise = null
-      })
-      await refreshPromise
-      return client(error.config)
+      const { refreshToken, setTokens, clearTokens } = useUiStore.getState()
+      if (!refreshToken) {
+        clearTokens()
+        return Promise.reject(error)
+      }
+      try {
+        refreshPromise ??= client
+          .post('/api/auth/refresh', { refresh_token: refreshToken })
+          .finally(() => {
+            refreshPromise = null
+          })
+        const { data } = await refreshPromise
+        setTokens(data.access_token, refreshToken)
+        return client(error.config)
+      } catch (refreshError) {
+        clearTokens()
+        return Promise.reject(refreshError)
+      }
     }
     return Promise.reject(error)
   },
