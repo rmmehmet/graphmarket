@@ -43,6 +43,14 @@ def get_job(db: Session, team_id: str, job_id: str) -> Job:
     return job
 
 
+def list_jobs(db: Session, team_id: str, job_type: str | None, limit: int = 50) -> list[Job]:
+    query = select(Job).where(Job.team_id == team_id)
+    if job_type:
+        query = query.where(Job.type == job_type)
+    query = query.order_by(Job.created_at.desc()).limit(limit)
+    return list(db.scalars(query))
+
+
 def update_job(
     db: Session,
     job_id: str,

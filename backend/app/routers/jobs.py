@@ -6,12 +6,22 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.postgres import get_db
-from app.schemas.job import JobOut
+from app.schemas.job import JobOut, JobSummaryOut
 from app.services.auth_service import AuthenticatedUser, get_current_user
-from app.services.job_service import get_job, job_channel
+from app.services.job_service import get_job, job_channel, list_jobs
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 ws_router = APIRouter()
+
+
+@router.get("/", response_model=list[JobSummaryOut])
+def list_jobs_endpoint(
+    type: str | None = None,
+    limit: int = 50,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return list_jobs(db, current_user.team_id, type, limit)
 
 
 @router.get("/{job_id}", response_model=JobOut)

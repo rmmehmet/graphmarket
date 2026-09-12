@@ -9,9 +9,9 @@ from app.models.model_profile import ModelProfile
 
 DEFAULT_PROFILES = {
     "planner": {"provider": "ollama", "model_name": "llama3.2"},
-    "extraction": {"provider": "huggingface", "model_name": None},
+    "extraction": {"provider": "claude_subscription", "model_name": None},
     "synthesis": {"provider": "claude_subscription", "model_name": None},
-    "verification": {"provider": "anthropic_api", "model_name": "claude-3-5-sonnet-20241022"},
+    "verification": {"provider": "claude_subscription", "model_name": None},
 }
 
 
