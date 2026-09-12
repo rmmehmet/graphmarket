@@ -121,3 +121,17 @@ def list_conversations(team_id: str, customer: str | None, product_hint: str | N
         )
         result = session.run(query, **params)
         return [dict(record) for record in result]
+
+
+def get_conversation_detail(team_id: str, customer: str, product: str) -> dict | None:
+    with get_session() as session:
+        result = session.run(
+            "MATCH (cust:Customer {team_id: $team_id, id: $customer})-[r:ILGILENDI]->(p:Product {name: $product}) "
+            "RETURN cust.id AS customer, p.name AS product, r.sentiment AS sentiment, "
+            "toString(r.mentioned_at) AS mentioned_at, coalesce(r.messages, []) AS messages",
+            team_id=team_id,
+            customer=customer,
+            product=product,
+        )
+        record = result.single()
+        return dict(record) if record else None

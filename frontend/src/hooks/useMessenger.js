@@ -1,10 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { importExport, listConversations, triggerSync } from '@satgit/api-client'
+import { getConversationDetail, importExport, listConversations, triggerSync } from '@satgit/api-client'
 
 export function useConversations(filters = {}) {
   return useQuery({
     queryKey: ['messenger-conversations', filters],
     queryFn: () => listConversations(filters),
+  })
+}
+
+export function useConversationDetail(customer, product) {
+  return useQuery({
+    queryKey: ['messenger-conversation-detail', customer, product],
+    queryFn: () => getConversationDetail(customer, product),
+    enabled: Boolean(customer && product),
   })
 }
 

@@ -31,6 +31,7 @@ def _run_messenger(state: dict) -> dict:
     team_id = state["team_id"]
     customer_ref = state["customer_ref"]
     channel_id = state.get("channel_id")
+    message_text = state.get("message_text", "")
     extracted = state.get("extracted", {})
     product_hint = (extracted.get("product_hint") or "").strip()
     sentiment = extracted.get("sentiment") or "nötr"
@@ -64,10 +65,13 @@ def _run_messenger(state: dict) -> dict:
                 matched_product_id = record["id"]
                 session.run(
                     "MATCH (cust:Customer {id: $customer_ref}), (p:Product {id: $product_id}) "
-                    "MERGE (cust)-[:ILGILENDI {mentioned_at: datetime(), sentiment: $sentiment}]->(p)",
+                    "MERGE (cust)-[r:ILGILENDI]->(p) "
+                    "SET r.mentioned_at = datetime(), r.sentiment = $sentiment, "
+                    "r.messages = coalesce(r.messages, []) + $message_text",
                     customer_ref=customer_ref,
                     product_id=matched_product_id,
                     sentiment=sentiment,
+                    message_text=message_text,
                 )
 
     return {"graph_written": True, "matched_product_id": matched_product_id}

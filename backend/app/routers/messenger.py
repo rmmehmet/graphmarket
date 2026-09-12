@@ -5,13 +5,20 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.postgres import get_db
-from app.schemas.messenger import ConnectResponse, ConversationOut, ImportExportResponse, SyncResponse
+from app.schemas.messenger import (
+    ConnectResponse,
+    ConversationDetailOut,
+    ConversationOut,
+    ImportExportResponse,
+    SyncResponse,
+)
 from app.services.auth_service import AuthenticatedUser, get_current_user
 from app.services.job_service import create_job, update_job
 from app.services.quota_service import check_and_increment
 from app.services.messenger_service import (
     build_oauth_url,
     exchange_code_for_token,
+    get_conversation_detail,
     list_conversations,
     parse_export_messages,
     resolve_team_id_by_page,
@@ -105,6 +112,18 @@ def conversations(
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     return list_conversations(current_user.team_id, customer, product_hint)
+
+
+@router.get("/conversations/detail", response_model=ConversationDetailOut)
+def conversation_detail(
+    customer: str,
+    product: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    detail = get_conversation_detail(current_user.team_id, customer, product)
+    if detail is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="konuşma bulunamadı")
+    return detail
 
 
 @router.post("/sync", response_model=SyncResponse)

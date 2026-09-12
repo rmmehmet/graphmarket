@@ -26,3 +26,10 @@ export async function listConversations({ customer, productHint } = {}) {
   })
   return data
 }
+
+export async function getConversationDetail(customer, product) {
+  const { data } = await client.get('/api/messenger/conversations/detail', {
+    params: { customer, product },
+  })
+  return data
+}
