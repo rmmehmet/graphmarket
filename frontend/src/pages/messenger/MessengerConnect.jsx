@@ -8,6 +8,8 @@ import useJobStatus from '../../hooks/useJobStatus'
 import { useImportExport, useTriggerSync } from '../../hooks/useMessenger'
 import ConversationList from './ConversationList'
 
+const MESSAGE_FILE_PATTERN = /message_\d+\.json$/i
+
 export default function MessengerConnect() {
   const queryClient = useQueryClient()
   const { data: channels = [] } = useChannels()
@@ -15,6 +17,7 @@ export default function MessengerConnect() {
   const [importJobId, setImportJobId] = useState(null)
   const [syncResult, setSyncResult] = useState(null)
   const [connecting, setConnecting] = useState(false)
+  const [folderProgress, setFolderProgress] = useState(null)
 
   const importExport = useImportExport()
   const triggerSync = useTriggerSync()
@@ -43,6 +46,36 @@ export default function MessengerConnect() {
       { file, channelId: channelId || null },
       { onSuccess: (data) => setImportJobId(data.job_id) },
     )
+  }
+
+  // Facebook "Bilgilerinizi İndirin" klasör yapısı: inbox/<kişi>/message_1.json (uzun sohbetlerde
+  // message_2.json, message_3.json...). Her dosyayı backend'e sırayla gönderiyoruz (paralel değil —
+  // 1700+ istek aynı anda gidince hem taraycı hem backend/Celery kuyruğu tıkanır); her dosya kendi
+  // job'unu tetikler ve arka planda Celery worker tarafından işlenir.
+  async function handleFolder(files) {
+    const messageFiles = files.filter((f) => MESSAGE_FILE_PATTERN.test(f.name))
+    if (!messageFiles.length) {
+      setFolderProgress({ total: 0, done: 0, failed: 0, finished: true })
+      return
+    }
+
+    setImportJobId(null)
+    setFolderProgress({ total: messageFiles.length, done: 0, failed: 0, finished: false })
+
+    let done = 0
+    let failed = 0
+    for (const file of messageFiles) {
+      try {
+        await importExport.mutateAsync({ file, channelId: channelId || null })
+        done += 1
+      } catch {
+        failed += 1
+      }
+      setFolderProgress({ total: messageFiles.length, done, failed, finished: false })
+    }
+
+    setFolderProgress({ total: messageFiles.length, done, failed, finished: true })
+    queryClient.invalidateQueries({ queryKey: ['messenger-conversations'] })
   }
 
   function handleSync() {
@@ -147,6 +180,38 @@ export default function MessengerConnect() {
             )}
           </div>
         )}
+
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+          <p style={{ fontSize: 12.5, color: 'var(--ink-2)', marginBottom: 8 }}>
+            Ya da her kişiyle ayrı klasörde tutulan toplu export'u (inbox/&lt;kişi&gt;/message_1.json)
+            tek seferde yükle — klasörün içindeki tüm <code>message_N.json</code> dosyaları bulunup
+            sırayla gönderilir. Çok sayıda mesaj varsa işlem uzun sürebilir.
+          </p>
+          <FileUploadZone
+            directory
+            accept=".json"
+            label="İçe aktarılacak ana klasörü seçmek için tıkla"
+            onFileSelected={handleFolder}
+            disabled={folderProgress && !folderProgress.finished}
+          />
+          {folderProgress && (
+            <div style={{ marginTop: 8, fontSize: 12.5 }}>
+              {folderProgress.total === 0 ? (
+                <p style={{ color: 'var(--critical)' }}>
+                  Seçilen klasörde message_N.json formatında dosya bulunamadı.
+                </p>
+              ) : (
+                <p style={{ color: folderProgress.finished ? 'var(--good)' : 'var(--ink-2)' }}>
+                  {folderProgress.done}/{folderProgress.total} klasör gönderildi
+                  {folderProgress.failed > 0 && ` (${folderProgress.failed} başarısız)`}
+                  {folderProgress.finished
+                    ? ' — arka planda işleniyor, "Konuşmalar" listesi tamamlandıkça güncellenecek.'
+                    : '...'}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>
